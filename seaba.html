@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Marcador en vivo</title>
+
+<!-- Tipografías: Rajdhani (nombres/etiquetas) + Orbitron (números) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg: #060a0f;
+    --ink: #e7f1f8;
+    --muted: #6f8394;
+    --team1: #00a2ff;   /* cian */
+    --team2: #ff004c;   /* magenta */
+    --gold: #ffcf5c;
+    --panel: rgba(12, 18, 26, 0.72);
+    --line: rgba(255,255,255,0.08);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    /* Fondo transparente para usarlo como fuente de navegador en OBS.
+       Si quieres verlo en un navegador normal, cambia a background: var(--bg); */
+    background: transparent;
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--ink);
+    overflow:hidden;
+  }
+
+  .stage{
+    width:100%;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 24px;
+  }
+
+.scoreboard{
+    position:relative;
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    width:min(920px,96vw);
+}
+
+  .team{
+  flex:1;
+  position:relative;
+  overflow:hidden;
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  padding: 22px 20px 18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  transition: box-shadow .4s ease, transform .25s ease;
+  isolation:isolate;
+}
+
+.team > *{
+  position:relative;
+  z-index:2;
+}
+
+.team::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+}
+
+/* TEAM 1 - FUEGO */
+.team--1::before{
+  background:
+    radial-gradient(circle at 50% 120%, rgba(255,220,120,.55), transparent 45%),
+    radial-gradient(circle at 20% 100%, rgba(255,80,0,.85), transparent 40%),
+    radial-gradient(circle at 80% 110%, rgba(255,180,0,.6), transparent 35%),
+    linear-gradient(180deg,#3a0700 0%, #8d1800 35%, #ff5a00 75%, #ffb347 100%);
+  animation: fireMove 4s ease-in-out infinite alternate;
+}
+
+/* TEAM 2 - HIELO */
+.team--2::before{
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255,255,255,.45), transparent 40%),
+    radial-gradient(circle at 25% 40%, rgba(180,240,255,.45), transparent 35%),
+    radial-gradient(circle at 75% 70%, rgba(100,180,255,.35), transparent 35%),
+    linear-gradient(180deg,#021b38 0%, #0b4f80 45%, #4ecbff 100%);
+  animation: iceMove 6s ease-in-out infinite alternate;
+}
+
+@keyframes fireMove{
+  0%{
+    transform:scale(1) translateY(0);
+    filter:hue-rotate(0deg);
+  }
+  100%{
+    transform:scale(1.08) translateY(-10px);
+    filter:hue-rotate(12deg) brightness(1.15);
+  }
+}
+
+@keyframes iceMove{
+  0%{
+    transform:translateY(0) scale(1);
+    filter:brightness(1);
+  }
+  100%{
+    transform:translateY(6px) scale(1.04);
+    filter:brightness(1.2) saturate(1.2);
+  }
+}
+
+  .team--1{ border-radius: 18px 4px 4px 18px; border-right: none; }
+  .team--2{ border-radius: 4px 18px 18px 4px; border-left: none; }
+
+  .team--1 .accent-bar{ background: linear-gradient(90deg, var(--team1), transparent); }
+  .team--2 .accent-bar{ background: linear-gradient(270deg, var(--team2), transparent); }
+
+  .accent-bar{
+    position:absolute;
+    top:0; left:0; right:0;
+    height: 4px;
+  }
+
+  .team--1{ box-shadow: inset 0 0 0 1px transparent; }
+  .team--2{ box-shadow: inset 0 0 0 1px transparent; }
+
+/* TEAM FIRE */
+.team--1{
+    border:3px solid #ff8c00;
+    box-shadow:
+        0 0 14px rgba(255,60,0,.75),
+        0 0 30px rgba(255,0,0,.55);
+}
+
+/* TEAM ICE */
+.team--2{
+    border:3px solid #ffffff;
+    box-shadow:
+        0 0 14px rgba(90,180,255,.8),
+        0 0 30px rgba(0,120,255,.6);
+}
+
+/* Glow extra para el que va ganando */
+.team.leading--1{
+    box-shadow:
+        0 0 20px rgba(255,70,0,.9),
+        0 0 40px rgba(255,0,0,.75),
+        0 0 60px rgba(255,120,0,.45);
+}
+
+.team.leading--2{
+    box-shadow:
+        0 0 20px rgba(180,220,255,.95),
+        0 0 40px rgba(80,170,255,.8),
+        0 0 60px rgba(0,120,255,.55);
+}
+
+  .sprite-wrap{
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid var(--line);
+    overflow:hidden;
+  }
+  .team--1 .sprite-wrap{ border-color: var(--team1); }
+  .team--2 .sprite-wrap{ border-color: var(--team2); }
+
+  .sprite-wrap img{
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+  }
+
+  .sprite-fallback{
+    font-family:'Orbitron', sans-serif;
+    font-weight:800;
+    font-size: 30px;
+  }
+  .team--1 .sprite-fallback{ color: var(--team1); }
+  .team--2 .sprite-fallback{ color: var(--team2); }
+
+.team-name{
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:#fff;
+    text-align:center;
+    line-height:1.1;
+    -webkit-text-stroke:1px #000;
+    text-shadow:
+        2px 2px 0 #000,
+       -2px 2px 0 #000,
+        2px -2px 0 #000,
+       -2px -2px 0 #000,
+        0 0 10px rgba(0,0,0,.8);
+}
+
+.points{
+    font-family:'Orbitron',sans-serif;
+    font-weight:900;
+    font-size:56px;
+    line-height:1;
+    font-variant-numeric:tabular-nums;
+    transition:transform .18s ease;
+    -webkit-text-stroke:2px #000;
+    text-shadow:
+        3px 3px 0 #000,
+       -3px 3px 0 #000,
+        3px -3px 0 #000,
+       -3px -3px 0 #000,
+        0 0 14px rgba(0,0,0,.8);
+}
+  .team--1 .points{ color: var(--team1); }
+  .team--2 .points{ color: var(--team2); }
+
+  .points.bump{ transform: scale(1.18); }
+
+.pts-label{
+    font-size:11px;
+    letter-spacing:3px;
+    color:#fff;
+    text-transform:uppercase;
+    margin-top:-6px;
+    font-weight:700;
+    -webkit-text-stroke:.8px #000;
+    text-shadow:
+        2px 2px 0 #000,
+       -2px 2px 0 #000,
+        2px -2px 0 #000,
+       -2px -2px 0 #000;
+}
+
+  /* Indicador de conexión */
+  .status{
+    position:absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform:uppercase;
+    background: var(--bg);
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+  }
+  .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: #ef4444;
+    transition: background .3s ease;
+  }
+  .dot.live{ background: #2fe08a; box-shadow: 0 0 6px #2fe08a; }
+
+  @media (max-width: 560px){
+    .points{ font-size: 38px; }
+    .sprite-wrap{ width:60px; height:60px; }
+    .team-name{ font-size: 14px; }
+    .vs{ width: 50px; }
+    .vs-badge{ width:46px; height:46px; font-size:11px; }
+  }
+
+  /* Panel de control manual (solo visible con ?admin=1 en la URL,
+     así en OBS / vista pública nunca aparece) */
+  .admin{
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display:flex;
+    gap: 10px;
+    background: rgba(6,10,15,0.85);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    z-index: 10;
+  }
+  .admin button{
+    cursor:pointer;
+    border:none;
+    border-radius:8px;
+    padding: 8px 12px;
+    font-weight:700;
+    font-size: 13px;
+    letter-spacing: .5px;
+    color:#fff;
+  }
+  .admin .b1{ background: var(--team1); }
+  .admin .b2{ background: var(--team2); }
+  .admin .reset{ background: #444; }
+  .admin[hidden]{ display:none; }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="scoreboard">
+
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span id="statusText">Conectando…</span>
+    </div>
+
+    <div class="team team--1" id="team1">
+      <div class="accent-bar"></div>
+      <div class="sprite-wrap" id="sprite1">
+        <span class="sprite-fallback">?</span>
+      </div>
+      <div class="team-name" id="name1">Team Fire</div>
+      <div class="points" id="points1">0</div>
+      <div class="pts-label">Puntos</div>
+    </div>
+
+
+    <div class="team team--2" id="team2">
+      <div class="accent-bar"></div>
+      <div class="sprite-wrap" id="sprite2">
+        <span class="sprite-fallback">?</span>
+      </div>
+      <div class="team-name" id="name2">Team Ice</div>
+      <div class="points" id="points2">0</div>
+      <div class="pts-label">Puntos</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Panel de control manual: solo aparece si abres la página con ?admin=1 al final de la URL -->
+<div class="admin" id="adminPanel" hidden>
+  <button class="b1" data-team="1" data-amount="1">+1 Equipo 1</button>
+  <button class="b1" data-team="1" data-amount="-1">-1 Equipo 1</button>
+  <button class="b2" data-team="2" data-amount="1">+1 Equipo 2</button>
+  <button class="b2" data-team="2" data-amount="-1">-1 Equipo 2</button>
+  <button class="reset" data-team="1" data-action="reset">Reset 1</button>
+  <button class="reset" data-team="2" data-action="reset">Reset 2</button>
+</div>
+
+<!-- SDK de Firebase (compat, más simple para un solo archivo) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+  // ⚠️ Reemplaza esto con la configuración de TU proyecto de Firebase
+  // (Firebase console > Configuración del proyecto > Tus apps > SDK setup)
+  const firebaseConfig = {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.appspot.com",
+    messagingSenderId: "TU_SENDER_ID",
+    appId: "TU_APP_ID"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Estructura esperada en Realtime Database:
+  // /scoreboard
+  //   /team1: { name: "Equipo 1", sprite: "https://.../sprite1.png", points: 0 }
+  //   /team2: { name: "Equipo 2", sprite: "https://.../sprite2.png", points: 0 }
+  //
+  // El Worker de Cloudflare que reciba los comandos de Twitch (ej: !punto1, !punto2)
+  // debe escribir en esas mismas rutas usando la REST API de Realtime Database, p.ej.:
+  //   PATCH https://TU_PROYECTO-default-rtdb.firebaseio.com/scoreboard/team1.json
+  //   body: { "points": nuevoPuntaje }
+
+  const ref = db.ref('scoreboard');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  db.ref('.info/connected').on('value', (snap) => {
+    const connected = snap.val() === true;
+    statusDot.classList.toggle('live', connected);
+    statusText.textContent = connected ? 'En vivo' : 'Conectando…';
+  });
+
+  function renderTeam(key, data){
+    if(!data) return;
+    const nameEl = document.getElementById('name' + key.slice(-1));
+    const pointsEl = document.getElementById('points' + key.slice(-1));
+    const spriteWrap = document.getElementById('sprite' + key.slice(-1));
+
+    if(data.name) nameEl.textContent = data.name;
+
+    const newPoints = Number(data.points || 0);
+    if(pointsEl.textContent !== String(newPoints)){
+      pointsEl.textContent = newPoints;
+      pointsEl.classList.remove('bump');
+      void pointsEl.offsetWidth; // reinicia la animación
+      pointsEl.classList.add('bump');
+    }
+
+    if(data.sprite){
+      spriteWrap.innerHTML = `<img src="${data.sprite}" alt="${data.name || ''}">`;
+    }
+
+    updateLeader();
+  }
+
+  function updateLeader(){
+    const p1 = Number(document.getElementById('points1').textContent || 0);
+    const p2 = Number(document.getElementById('points2').textContent || 0);
+    const t1 = document.getElementById('team1');
+    const t2 = document.getElementById('team2');
+    t1.classList.toggle('leading--1', p1 > p2);
+    t2.classList.toggle('leading--2', p2 > p1);
+  }
+
+  ref.child('team1').on('value', (snap) => renderTeam('team1', snap.val()));
+  ref.child('team2').on('value', (snap) => renderTeam('team2', snap.val()));
+
+  // ---------------------------------------------------------------
+  // Panel de control manual -> llama al Worker de Cloudflare
+  // ---------------------------------------------------------------
+  const WORKER_URL = 'https://hidden-band-5fec.seabafn3101.workers.dev/punto';
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('admin') === '1') {
+    document.getElementById('adminPanel').hidden = false;
+
+    document.querySelectorAll('.admin button').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        let token = sessionStorage.getItem('bridgeToken');
+        if (!token) {
+          token = prompt('Introduce tu BRIDGE_TOKEN del Worker:');
+          if (!token) return;
+          sessionStorage.setItem('bridgeToken', token);
+        }
+
+        const team = btn.dataset.team;
+        const action = btn.dataset.action; // "reset" o undefined
+        let url = `${WORKER_URL}?team=${team}&token=${encodeURIComponent(token)}`;
+        if (action === 'reset') {
+          url += '&action=reset';
+        } else {
+          url += `&amount=${btn.dataset.amount}`;
+        }
+
+        btn.disabled = true;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) {
+            // Token incorrecto u otro error: lo borramos para que lo pida de nuevo
+            sessionStorage.removeItem('bridgeToken');
+            alert('Error al actualizar: ' + (await res.text()));
+          }
+        } catch (err) {
+          alert('No se pudo contactar con el Worker: ' + err.message);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
