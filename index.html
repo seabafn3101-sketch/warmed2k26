@@ -22,32 +22,32 @@
 
   *{ box-sizing:border-box; }
 
-  html, body{
+html, body{
+    width:100%;
+    height:100%;
     margin:0;
     padding:0;
-    background:transparent; /* clave para OBS: sin fondo, solo se ven las cards */
-    width:fit-content;
-    height:fit-content;
-  }
+    background:transparent;
+}
 
   body{
     font-family:'Rubik', sans-serif;
     display:flex;
-    flex-direction:column;
-    align-items:center;
     justify-content:center;
-    overflow:hidden; /* evita scrollbars dentro del browser source */
-  }
+    align-items:center;
+    overflow:hidden;
+}
 
   .arena{
     position:relative;
     display:flex;
-    flex-wrap:nowrap;
     align-items:center;
     justify-content:center;
     gap:20px;
-    padding:16px;
-  }
+
+    width:100%;
+    height:100%;
+}
 
   /* Indicador de conexión a Firebase */
   .status{
